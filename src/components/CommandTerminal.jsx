@@ -31,7 +31,7 @@ function CommandTerminal() {
 
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:8080/api/command/execute", {
+      const response = await axios.post("http://localhost:8081/api/command/execute", {
         command: cmd
       });
       

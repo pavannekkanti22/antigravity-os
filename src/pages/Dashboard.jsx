@@ -1,19 +1,81 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import AnalyticsChart from "../components/AnalyticsChart";
-import CommandTerminal from "../components/CommandTerminal";
-import { Activity, Cpu, Server, Shield, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 
+import {
+  Sparkles,
+  Activity,
+  Server,
+  Cpu,
+  Shield
+} from "lucide-react";
+
+import { motion, AnimatePresence } from "framer-motion";
+
+import AnalyticsChart from "../components/AnalyticsChart";
+import ActivityPanel from "../components/ActivityPanel";
+import CommandTerminal from "../components/CommandTerminal";
 function Dashboard() {
+  const [telemetry, setTelemetry] = useState({
+  cpu: 0,
+  memory: 0,
+  nodes: 0,
+  event: "Waiting for telemetry..."
+});
+const [profile, setProfile] = useState({
+  fullName: "",
+  email: "",
+  role: "",
+  createdAt: ""
+});
+const [stats, setStats] = useState({
+  revenue: 128430,
+  activeClients: 2341,
+  runningProjects: 128,
+  systemGrowth: 18.0,
+  cpu: 42.0,
+  ram: 64.0,
+});
+useEffect(() => {
+
+  const token = localStorage.getItem("token");
+
+  if (!token) return;
+
+  fetch("http://localhost:8081/api/profile/me", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      setProfile(data);
+    })
+    .catch((err) => {
+      console.error("Profile load failed:", err);
+    });
+
+}, []);
+useEffect(() => {
+
+  const eventSource = new EventSource(
+    "http://localhost:8081/api/telemetry/stream"
+  );
+
+  eventSource.addEventListener(
+    "telemetry",
+    (event) => {
+
+      const data = JSON.parse(event.data);
+
+      setTelemetry(data);
+    }
+  );
+
+  return () => {
+    eventSource.close();
+  };
+
+}, []);
   // Real-time telemetry states
-  const [stats, setStats] = useState({
-    revenue: 128430,
-    activeClients: 2341,
-    runningProjects: 128,
-    systemGrowth: 18.0,
-    cpu: 42.0,
-    ram: 64.0,
-  });
 
   const [activities, setActivities] = useState([
     "Security scan complete: Core stabilized",
@@ -33,7 +95,7 @@ function Dashboard() {
 
   // Connect to SSE Telemetry stream
   useEffect(() => {
-    const eventSource = new EventSource("http://localhost:8080/api/telemetry/stream");
+    const eventSource = new EventSource("http://localhost:8081/api/telemetry/stream");
 
     eventSource.addEventListener("telemetry", (event) => {
       try {
@@ -123,9 +185,19 @@ function Dashboard() {
           <h1 className="text-white text-3xl md:text-5xl font-black leading-tight tracking-wider uppercase font-mono">
             Antigravity OS <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">Command Center</span>
           </h1>
-          <p className="text-zinc-500 mt-2 text-sm max-w-xl">
-            Real-time visual monitoring of system telemetry, database constraints, and cognitive AI-agents.
-          </p>
+        <div className="mt-3 space-y-1">
+  <p className="text-white font-semibold">
+    {profile.fullName || "Loading..."}
+  </p>
+
+  <p className="text-zinc-400 text-sm">
+    {profile.email}
+  </p>
+
+  <p className="text-cyan-400 text-xs font-mono">
+    {profile.role}
+  </p>
+</div>
         </div>
 
         {/* Pulse Heartbeat */}
@@ -136,7 +208,7 @@ function Dashboard() {
           </div>
           <div>
             <div className="text-xs text-white font-bold font-mono tracking-wider">SECURE LINK ESTABLISHED</div>
-            <div className="text-[10px] text-zinc-500 font-mono">NODE: SPRING_BOOT_CORE_8080</div>
+            <div className="text-[10px] text-zinc-500 font-mono">NODE: SPRING_BOOT_CORE_8081</div>
           </div>
         </div>
       </div>
@@ -282,5 +354,4 @@ function Dashboard() {
     </div>
   );
 }
-
 export default Dashboard;

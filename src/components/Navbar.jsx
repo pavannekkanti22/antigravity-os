@@ -1,6 +1,17 @@
 import { Bell, Search, Menu } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function Navbar() {
+  const navigate = useNavigate();
+  const handleLogout = () => {
+
+  localStorage.removeItem("token");
+
+  localStorage.removeItem("user");
+
+  navigate("/");
+};
   return (
     <header className="h-20 border-b border-zinc-900 bg-black/40 backdrop-blur-xl flex items-center justify-between px-8 sticky top-0 z-50">
      <div className="flex items-center gap-4">
@@ -21,9 +32,9 @@ function Navbar() {
 
 </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3">
         
-        <div className="relative">
+        <div className="relative hidden md:block">
           <Search
             size={18}
             className="absolute left-4 top-3.5 text-zinc-500"
@@ -40,7 +51,18 @@ function Navbar() {
   <Bell size={20} />
 
 </button>
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500"></div>
+    <div className="flex items-center gap-3">
+
+  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500"></div>
+
+  <button
+    onClick={handleLogout}
+    className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-red-400 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 transition-all duration-300"
+  >
+    <LogOut size={18} />
+  </button>
+
+</div>
       </div>
     </header>
   );
