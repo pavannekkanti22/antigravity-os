@@ -5,17 +5,21 @@ function DashboardLayout({ children }) {
   return (
     <div className="bg-[#020203] min-h-screen relative overflow-x-hidden flex flex-col">
       
-      {/* Ambient Glow Effects */}
-      <div className="absolute top-[-250px] left-[-150px] w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[140px] pointer-events-none"></div>
+      {/* Ambient Background Glow Signals */}
+      <div className="absolute top-[-300px] left-[-200px] w-[800px] h-[800px] bg-violet-600/5 rounded-full blur-[160px] pointer-events-none"></div>
+      <div className="absolute bottom-[-300px] right-[-200px] w-[800px] h-[800px] bg-cyan-600/5 rounded-full blur-[160px] pointer-events-none"></div>
 
-      <div className="absolute bottom-[-250px] right-[-150px] w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[140px] pointer-events-none"></div>
+      {/* Cyber Grid Overlay */}
+      <div className="absolute inset-0 opacity-[0.01] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none"></div>
 
+      {/* TOP NAVIGATION */}
       <Navbar />
 
-      <div className="flex-1 flex gap-8 px-8 py-8 relative z-10 max-w-[1800px] mx-auto w-full">
+      {/* BODY COLUMN PANEL */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-8 px-4 sm:px-8 py-8 relative z-10 max-w-[1800px] mx-auto w-full">
         <Sidebar />
 
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 z-10">
           {children}
         </main>
       </div>

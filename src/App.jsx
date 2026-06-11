@@ -12,6 +12,7 @@ import AuthLayout from "./Layouts/AuthLayout";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Admin from "./pages/Admin";
+import Profile from "./pages/Profile.jsx";
 
 function App() {
 
@@ -43,7 +44,18 @@ function App() {
 
             </ProtectedRoute>
           }
+          
         />
+        <Route
+  path="/profile"
+  element={
+    <ProtectedRoute>
+      <DashboardLayout>
+        <Profile />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
        <Route
   path="/admin"
   element={

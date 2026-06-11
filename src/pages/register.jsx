@@ -1,4 +1,10 @@
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 function Register() {
+  const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+const [password, setPassword] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
   return (
     <div className="w-full max-w-md">
 
@@ -28,19 +34,60 @@ function Register() {
           className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-violet-500 transition-all duration-300"
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-violet-500 transition-all duration-300"
-        />
+      <div className="relative">
 
-        <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-semibold hover:opacity-90 transition-all duration-300 shadow-lg shadow-violet-500/20">
-          Create Account
-        </button>
+  <input
+    type={showPassword ? "text" : "password"}
+    placeholder="Password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 pr-14 text-white outline-none"
+  />
 
-      </div>
+  <button
+    type="button"
+    onClick={() => setShowPassword(!showPassword)}
+    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+  >
+    {showPassword ? (
+      <EyeOff className="w-5 h-5" />
+    ) : (
+      <Eye className="w-5 h-5" />
+    )}
+  </button>
+
+</div>
+<div className="relative mt-5">
+
+  <input
+    type={showConfirmPassword ? "text" : "password"}
+    placeholder="Confirm Password"
+    
+    value={confirmPassword}
+    onChange={(e) => setConfirmPassword(e.target.value)}
+    className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 pr-14 text-white outline-none"
+  />
+<p className="text-red-500">
+  CONFIRM PASSWORD TEST
+</p>
+  <button
+    type="button"
+    onClick={() =>
+      setShowConfirmPassword(!showConfirmPassword)
+    }
+    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+  >
+    {showConfirmPassword ? (
+      <EyeOff className="w-5 h-5" />
+    ) : (
+      <Eye className="w-5 h-5" />
+    )}
+  </button>
+
+</div>
 
     </div>
+  </div>
   );
 }
 

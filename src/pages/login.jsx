@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 function Login() {
 
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="min-h-screen bg-black flex">
@@ -104,11 +107,27 @@ function Login() {
           />
 
           {/* PASSWORD */}
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all duration-300"
-          />
+        <div className="relative">
+
+  <input
+    type={showPassword ? "text" : "password"}
+    placeholder="Password"
+    className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 pr-14 text-white outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all duration-300"
+  />
+
+  <button
+    type="button"
+    onClick={() => setShowPassword(!showPassword)}
+    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+  >
+    {showPassword ? (
+      <EyeOff className="w-5 h-5" />
+    ) : (
+      <Eye className="w-5 h-5" />
+    )}
+  </button>
+
+</div>
 
           {/* FORGOT */}
           <div className="flex justify-end mt-4">

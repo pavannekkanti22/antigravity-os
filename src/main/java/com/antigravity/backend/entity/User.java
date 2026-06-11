@@ -31,6 +31,9 @@ public class User {
     @Column(nullable = false)
     private Boolean active;
 
+    @Column(nullable = true)
+    private String avatar;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -45,4 +48,9 @@ public class User {
 
         if (active == null) {
             active = true;
-        }}}
+        }
+
+        if (avatar == null) {
+            avatar = "avatar1";
+        }
+    }}
