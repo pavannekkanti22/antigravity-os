@@ -61,6 +61,25 @@ function Admin() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [logs, setLogs] = useState([]);
   const [activeSection, setActiveSection] = useState("users");
+  const [threatData, setThreatData] = useState({
+  failedLogins: 0,
+  blockedUsers: 0,
+  passwordResets: 0,
+  roleChanges: 0,
+  securityScore: 98,
+});
+
+const [settings, setSettings] = useState({
+  applicationName: "",
+  companyName: "",
+  supportEmail: "",
+  sessionTimeout: 30,
+  maintenanceMode: false,
+  userRegistrationEnabled: true,
+  passwordMinLength: 8,
+});
+  
+  
   const [analytics, setAnalytics] = useState({
     
     totalUsers: 0,
@@ -89,6 +108,10 @@ function Admin() {
   const [notifications, setNotifications] = useState([]);
 const [showNotifications, setShowNotifications] = useState(false);
 
+const unreadCount = notifications.filter(
+  (notification) => !notification.isRead
+).length;
+
   const [terminalCommand, setTerminalCommand] = useState("");
   const [terminalOutputs, setTerminalOutputs] = useState([
     "ANTIGRAVITY CORE SYSTEMS [Version 4.1.0-Secure]",
@@ -102,10 +125,6 @@ const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-  const unreadCount = notifications.filter(
-  (notification) => !notification.isRead
-).length;
-
   const terminalEndRef = useRef(null);
 
   const authHeaders = useMemo(
@@ -223,6 +242,55 @@ const markAllRead = async () => {
     );
 
     loadNotifications();
+  } catch (err) {
+    console.error(err);
+  }
+};
+const loadSettings = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:8081/api/settings",
+      {
+        headers: authHeaders,
+      }
+    );
+
+    const data = await response.json();
+    setSettings(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const saveSettings = async () => {
+  try {
+    await fetch(
+      "http://localhost:8081/api/settings",
+      {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify(settings),
+      }
+    );
+
+    showToast("Settings saved successfully");
+  } catch (err) {
+    console.error(err);
+  }
+};
+const loadThreatData = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:8081/api/threats",
+      {
+        headers: authHeaders,
+      }
+    );
+
+    const data = await response.json();
+
+    setThreatData(data);
+
   } catch (err) {
     console.error(err);
   }
@@ -363,6 +431,8 @@ const markAllRead = async () => {
   loadLogs();
   loadAnalytics();
   loadNotifications();
+  loadSettings();
+  loadThreatData();
   const interval = setInterval(() => {
   loadNotifications();
 }, 5000);
@@ -394,6 +464,18 @@ return () => clearInterval(interval);
       terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [terminalOutputs]);
+  // THREAT INTELLIGENCE SIMULATOR
+ useEffect(() => {
+
+  loadThreatData();
+
+  const interval = setInterval(() => {
+    loadThreatData();
+  }, 5000);
+
+  return () => clearInterval(interval);
+
+}, []);
 
   const executeShellCommand = async (e) => {
     e.preventDefault();
@@ -606,10 +688,33 @@ return () => clearInterval(interval);
             System Health
           </button>
           <button
+  onClick={() => setActiveSection("threats")}
+  className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-left transition duration-300 font-medium font-mono text-sm cursor-pointer ${
+    activeSection === "threats"
+      ? "bg-gradient-to-r from-red-500/10 to-transparent border-l-2 border-red-400 text-red-300"
+      : "text-zinc-400 hover:text-white hover:bg-zinc-900/40"
+  }`}
+>
+  <Shield className="w-5 h-5" />
+  Threat Intelligence
+</button>
+          <button
+  onClick={() => setActiveSection("settings")}
+  className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-left transition duration-300 font-medium font-mono text-sm cursor-pointer ${
+    activeSection === "settings"
+      ? "bg-gradient-to-r from-cyan-500/10 to-transparent border-l-2 border-cyan-400 text-cyan-300"
+      : "text-zinc-400 hover:text-white hover:bg-zinc-900/40"
+  }`}
+>
+  <Settings className="w-5 h-5" />
+  Mission Control
+</button>
+          <button
             onClick={() => {
               localStorage.clear();
               navigate("/");
             }}
+            
             className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-red-400 hover:bg-red-500/10 w-full transition text-left cursor-pointer font-mono text-sm"
           >
             <LogOut className="w-5 h-5" />
@@ -1237,7 +1342,301 @@ return () => clearInterval(interval);
                         </div>
           </div>
         )}
+   {/* MISSION CONTROL */}
+{activeSection === "settings" && (
+  <div className="space-y-5">
+    <div className="flex items-center justify-between">
+      <div>
+        <h2 className="text-3xl font-black text-white uppercase font-mono">
+          Mission Control
+        </h2>
+        <p className="text-zinc-500 text-xs font-mono mt-1.5">
+          Core Platform Configuration Matrix
+        </p>
+      </div>
+
+      <button
+        onClick={saveSettings}
+        className="px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-bold hover:bg-cyan-500/20 transition-all duration-300"
+      >
+        Deploy Changes
+      </button>
+    </div>
+
+    <div className="bg-zinc-950/40 border border-zinc-800/70 rounded-2xl p-4">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-4 py-2 border-b border-zinc-800/60">
+          <span className="text-zinc-300 text-sm font-mono">User Registration</span>
+          <button
+            onClick={() =>
+              setSettings({
+                ...settings,
+                userRegistrationEnabled: !settings.userRegistrationEnabled,
+              })
+            }
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-300 ${
+              settings.userRegistrationEnabled
+                ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
+                : "bg-red-500/10 text-red-300 border-red-500/20"
+            }`}
+          >
+            {settings.userRegistrationEnabled ? "ENABLED" : "DISABLED"}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 py-2 border-b border-zinc-800/60">
+          <span className="text-zinc-300 text-sm font-mono">Maintenance Mode</span>
+          <button
+            onClick={() =>
+              setSettings({
+                ...settings,
+                maintenanceMode: !settings.maintenanceMode,
+              })
+            }
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-300 ${
+              settings.maintenanceMode
+                ? "bg-red-500/10 text-red-300 border-red-500/20"
+                : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
+            }`}
+          >
+            {settings.maintenanceMode ? "ACTIVE" : "OFFLINE"}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 py-2 border-b border-zinc-800/60">
+          <span className="text-zinc-300 text-sm font-mono">Session Timeout</span>
+          <input
+            type="number"
+            value={settings.sessionTimeout}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                sessionTimeout: Number(e.target.value),
+              })
+            }
+            className="w-24 bg-zinc-900/80 border border-zinc-800 rounded-lg px-3 py-1.5 text-white outline-none focus:border-cyan-500/40 transition-all duration-300 text-xs text-right"
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-4 py-2 border-b border-zinc-800/60">
+          <span className="text-zinc-300 text-sm font-mono">Password Policy</span>
+          <input
+            type="number"
+            value={settings.passwordMinLength}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                passwordMinLength: Number(e.target.value),
+              })
+            }
+            className="w-24 bg-zinc-900/80 border border-zinc-800 rounded-lg px-3 py-1.5 text-white outline-none focus:border-amber-500/40 transition-all duration-300 text-xs text-right"
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-4 py-2">
+          <span className="text-zinc-300 text-sm font-mono">Platform Identity</span>
+          <span className="text-zinc-500 text-xs font-mono">CONFIGURED</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+        <input
+          type="text"
+          value={settings.applicationName}
+          onChange={(e) =>
+            setSettings({
+              ...settings,
+              applicationName: e.target.value,
+            })
+          }
+          placeholder="Application Name"
+          className="bg-zinc-900/80 border border-zinc-800 rounded-lg p-2.5 text-white outline-none focus:border-cyan-500/40 transition-all duration-300 placeholder-zinc-600 text-xs"
+        />
+
+        <input
+          type="text"
+          value={settings.companyName}
+          onChange={(e) =>
+            setSettings({
+              ...settings,
+              companyName: e.target.value,
+            })
+          }
+          placeholder="Company Name"
+          className="bg-zinc-900/80 border border-zinc-800 rounded-lg p-2.5 text-white outline-none focus:border-cyan-500/40 transition-all duration-300 placeholder-zinc-600 text-xs"
+        />
+
+        <input
+          type="email"
+          value={settings.supportEmail}
+          onChange={(e) =>
+            setSettings({
+              ...settings,
+              supportEmail: e.target.value,
+            })
+          }
+          placeholder="Support Email"
+          className="bg-zinc-900/80 border border-zinc-800 rounded-lg p-2.5 text-white outline-none focus:border-cyan-500/40 transition-all duration-300 placeholder-zinc-600 text-xs md:col-span-2"
+        />
+      </div>
+    </div>
+  </div>
+)}
+{/* THREAT INTELLIGENCE */}
+{activeSection === "threats" && (
+  <div className="space-y-8">
+
+    <div className="flex items-center justify-between">
+      <div>
+        <h2 className="text-4xl font-black text-white uppercase font-mono">
+          Threat Intelligence
+        </h2>
+
+        <p className="text-zinc-500 text-sm font-mono mt-2">
+          Live Security Monitoring Matrix
+        </p>
+      </div>
+
+      <div className="px-5 py-3 rounded-2xl bg-red-500/10 border border-red-500/20">
+        <span className="text-red-400 font-mono font-bold">
+          THREAT LEVEL: LOW
+        </span>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+
+      <div className="bg-zinc-950/40 border border-red-500/10 rounded-3xl p-6">
+        <h4 className="text-zinc-500 text-xs uppercase font-mono mb-2">
+          Failed Logins
+        </h4>
+
+        <div className="text-4xl font-black text-red-400">
+          {threatData.failedLogins}
+        </div>
+      </div>
+
+      <div className="bg-zinc-950/40 border border-orange-500/10 rounded-3xl p-6">
+        <h4 className="text-zinc-500 text-xs uppercase font-mono mb-2">
+          Blocked Users
+        </h4>
+
+        <div className="text-4xl font-black text-orange-400">
+          {threatData.blockedUsers}
+        </div>
+      </div>
+
+      <div className="bg-zinc-950/40 border border-yellow-500/10 rounded-3xl p-6">
+        <h4 className="text-zinc-500 text-xs uppercase font-mono mb-2">
+          Password Resets
+        </h4>
+
+        <div className="text-4xl font-black text-yellow-400">
+          {threatData.passwordResets}
+        </div>
+      </div>
+
+      <div className="bg-zinc-950/40 border border-cyan-500/10 rounded-3xl p-6">
+        <h4 className="text-zinc-500 text-xs uppercase font-mono mb-2">
+          Role Changes
+        </h4>
+
+        <div className="text-4xl font-black text-cyan-400">
+          {threatData.roleChanges}
+        </div>
+      </div>
+
+      <div className="bg-zinc-950/40 border border-emerald-500/10 rounded-3xl p-6">
+        <h4 className="text-zinc-500 text-xs uppercase font-mono mb-2">
+          Security Score
+        </h4>
+
+        <div className="text-4xl font-black text-emerald-400">
+          {threatData.securityScore}%
+        </div>
+      </div>
+
+    </div>
+
+    <div className="bg-zinc-950/40 border border-white/5 rounded-3xl p-8">
+      <h3 className="text-white text-xl font-bold font-mono mb-6">
+        Security Status
+      </h3>
+
+      <div className="space-y-4 font-mono text-sm">
+
+        <div className="flex justify-between">
+          <span className="text-zinc-400">
+            Authentication Gateway
+          </span>
+
+          <span className="text-emerald-400">
+            SECURE
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="text-zinc-400">
+            JWT Validation Service
+          </span>
+
+          <span className="text-emerald-400">
+            ACTIVE
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="text-zinc-400">
+            User Access Monitoring
+          </span>
+
+          <span className="text-emerald-400">
+            RUNNING
+          </span>
+        </div>
+
+      </div>
+    </div>
+    <div className="bg-zinc-950/40 border border-white/5 rounded-3xl p-6">
+  <h3 className="text-white font-bold font-mono mb-4">
+    Security Event Timeline
+  </h3>
+
+  <div className="space-y-2 max-h-[250px] overflow-y-auto">
+{logs.slice(0, 10).map((log) => (
+  <div
+    key={log.id}
+    className="bg-zinc-900/60 border border-white/5 rounded-2xl p-4 hover:border-red-500/20 transition-all duration-300"
+  >
+    <div className="flex items-center justify-between">
+
+      <span className="text-red-400 text-[10px] uppercase font-bold tracking-wider">
+        SECURITY EVENT
+      </span>
+
+      <span className="text-zinc-600 text-[10px]">
+        #{log.id}
+      </span>
+
+    </div>
+
+    <p className="text-white mt-2 text-sm font-medium">
+      {log.action}
+    </p>
+
+    <p className="text-zinc-500 text-xs mt-2">
+      {new Date(log.createdAt).toLocaleString()}
+    </p>
+
+  </div>
+))}
+  </div>
+</div>
+
+  </div>
+)}
       </main>
+
 
       {/* CREATE USER MODAL */}
       {showAddUserModal && (
