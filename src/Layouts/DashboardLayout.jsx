@@ -6,7 +6,7 @@ function DashboardLayout({ children }) {
     <div className="bg-[#020203] min-h-screen relative overflow-x-hidden flex flex-col">
       
       {/* Ambient Background Glow Signals */}
-      <div className="absolute top-[-300px] left-[-200px] w-[800px] h-[800px] bg-violet-600/5 rounded-full blur-[160px] pointer-events-none"></div>
+      <div className="absolute top-[-300px] left-[-200px] w-[800px] h-[800px] bg-indigo-600/5 rounded-full blur-[160px] pointer-events-none"></div>
       <div className="absolute bottom-[-300px] right-[-200px] w-[800px] h-[800px] bg-cyan-600/5 rounded-full blur-[160px] pointer-events-none"></div>
 
       {/* Cyber Grid Overlay */}

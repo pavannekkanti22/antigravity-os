@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   User as UserIcon,
   Lock,
@@ -40,6 +40,9 @@ function Profile() {
   const [toast, setToast] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   const token = localStorage.getItem("token");
 
@@ -155,6 +158,43 @@ function Profile() {
     }
   };
 
+  const isImageAvatar = (val) => val && (val.startsWith("http") || val.startsWith("/") || val.startsWith("data:"));
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("http://localhost:8081/api/profile/upload-avatar", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Upload failed");
+      const data = await response.json();
+      await updateProfileAvatar(data.url);
+    } catch (err) {
+      showToast(err.message || "Upload failed", "error");
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const updateProfileAvatar = async (avatarUrl) => {
+    const response = await fetch("http://localhost:8081/api/profile/update", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ fullName, avatar: avatarUrl }),
+    });
+    if (!response.ok) throw new Error(await response.text());
+    setAvatar(avatarUrl);
+    showToast("Avatar updated successfully");
+    loadProfile();
+  };
+
   const currentAvatarInfo = avatarsList.find(a => a.id === avatar) || avatarsList[0];
 
   if (!profile) {
@@ -185,16 +225,35 @@ function Profile() {
 
       {/* CORE PROFILE CARD */}
       <div className="rounded-[32px] border border-white/10 bg-zinc-950/40 p-8 backdrop-blur-3xl shadow-xl flex flex-col md:flex-row items-center gap-8">
-        <div className="relative group">
-          <div className={`w-28 h-28 rounded-3xl bg-gradient-to-br ${currentAvatarInfo.color} flex items-center justify-center text-5xl shadow-lg relative z-10`}>
-            {currentAvatarInfo.icon}
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative group">
+            {isImageAvatar(avatar) ? (
+              <div className="w-28 h-28 rounded-3xl overflow-hidden shadow-lg relative z-10 border-2 border-white/5">
+                <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className={`w-28 h-28 rounded-3xl bg-gradient-to-br ${currentAvatarInfo.color} flex items-center justify-center text-5xl shadow-lg relative z-10`}>
+                {currentAvatarInfo.icon}
+              </div>
+            )}
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFile}
+              className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-zinc-900 border border-zinc-800 text-cyan-400 flex items-center justify-center hover:text-white hover:border-cyan-500 transition-all duration-300 z-20 shadow-md cursor-pointer disabled:opacity-50"
+            >
+              <Camera size={18} />
+            </button>
           </div>
-          <button 
-            onClick={() => setShowAvatarModal(true)}
-            className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-zinc-900 border border-zinc-800 text-cyan-400 flex items-center justify-center hover:text-white hover:border-cyan-500 transition-all duration-300 z-20 shadow-md cursor-pointer"
-          >
-            <Camera size={18} />
-          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileSelect} />
+          <div className="flex flex-col items-center gap-1.5">
+            <button 
+              onClick={() => setShowAvatarModal(true)}
+              className="text-cyan-400 text-[11px] font-mono hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              Choose emoji avatar
+            </button>
+            {uploadingFile && <span className="text-zinc-500 text-[10px] font-mono animate-pulse">Uploading...</span>}
+          </div>
         </div>
 
         <div className="flex-1 space-y-4 text-center md:text-left">
@@ -250,17 +309,25 @@ function Profile() {
                   Assigned Avatar Type
                 </label>
                 <div className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${currentAvatarInfo.color} flex items-center justify-center text-2xl`}>
-                    {currentAvatarInfo.icon}
-                  </div>
+                  {isImageAvatar(avatar) ? (
+                    <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/5 flex-shrink-0">
+                      <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${currentAvatarInfo.color} flex items-center justify-center text-2xl flex-shrink-0`}>
+                      {currentAvatarInfo.icon}
+                    </div>
+                  )}
                   <div>
-                    <span className="text-white text-sm font-bold block">{currentAvatarInfo.name}</span>
+                    <span className="text-white text-sm font-bold block">
+                      {isImageAvatar(avatar) ? "Uploaded Photo" : currentAvatarInfo.name}
+                    </span>
                     <button 
                       type="button"
                       onClick={() => setShowAvatarModal(true)}
                       className="text-cyan-400 text-xs hover:text-cyan-300 transition-colors text-left"
                     >
-                      Choose another avatar
+                      {isImageAvatar(avatar) ? "Switch to emoji avatar" : "Choose another avatar"}
                     </button>
                   </div>
                 </div>

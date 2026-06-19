@@ -3,7 +3,7 @@ import { Bell, Search, Menu, LogOut, Terminal, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const avatarsList = [
-  { id: "avatar1", name: "Cyber Commander", color: "from-cyan-500 to-blue-500", icon: "🌌" },
+  { id: "avatar1", name: "Indigo Commander", color: "from-indigo-500 to-cyan-500", icon: "🌌" },
   { id: "avatar2", name: "Neural Hacker", color: "from-violet-500 to-fuchsia-500", icon: "⚡" },
   { id: "avatar3", name: "Quantum Operator", color: "from-emerald-500 to-green-500", icon: "🧩" },
   { id: "avatar4", name: "Matrix Agent", color: "from-amber-500 to-orange-500", icon: "🕶️" },
@@ -40,6 +40,7 @@ function Navbar() {
     navigate("/");
   };
 
+  const isImageAvatar = avatar && (avatar.startsWith("http") || avatar.startsWith("/") || avatar.startsWith("data:"));
   const currentAvatarInfo = avatarsList.find(a => a.id === avatar) || avatarsList[0];
 
   return (
@@ -92,10 +93,14 @@ function Navbar() {
         <div className="flex items-center gap-3 pl-3 border-l border-white/5">
           <div 
             onClick={() => navigate("/profile")}
-            className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${currentAvatarInfo.color} flex items-center justify-center text-xl shadow-lg hover:scale-105 border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer`}
+            className={`w-11 h-11 rounded-2xl ${isImageAvatar ? "overflow-hidden" : `bg-gradient-to-br ${currentAvatarInfo.color}`} flex items-center justify-center text-xl shadow-lg hover:scale-105 border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer`}
             title="View Profile Settings"
           >
-            {currentAvatarInfo.icon}
+            {isImageAvatar ? (
+              <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              currentAvatarInfo.icon
+            )}
           </div>
 
           <div className="hidden xl:block text-left">
