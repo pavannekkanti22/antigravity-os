@@ -37,30 +37,25 @@ const notificationRef = useRef(null);
       })
       .catch(err => console.error("Navbar profile load failed", err));
   }, [token]);
+
   const loadNotifications = async () => {
-  try {
-    const response = await fetch(
-      "http://localhost:8081/api/notifications",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    useEffect(() => {
-  const interval = setInterval(() => {
-    loadNotifications();
-  }, 5000);
+    try {
+      const response = await fetch("http://localhost:8081/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      setNotifications(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  return () => clearInterval(interval);
-}, []);
-
-    const data = await response.json();
-    setNotifications(data);
-  } catch (err) {
-    console.error(err);
-  }
-};
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadNotifications();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
