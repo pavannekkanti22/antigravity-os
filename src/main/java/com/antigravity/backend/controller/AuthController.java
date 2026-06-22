@@ -66,7 +66,7 @@ public class AuthController {
     }
 
     private boolean isSuspiciousLogin(String email, String ip, String userAgent) {
-        LocalWindow window = LocalDateTime.now().minusMinutes(15);
+        LocalDateTime window = LocalDateTime.now().minusMinutes(15);
         long recentFailures = authLogRepository.countByActionAndTimestampAfter("LOGIN_FAILED", window);
         if (recentFailures >= 5) return true;
 
@@ -196,7 +196,7 @@ public class AuthController {
             String token = authHeader.substring(7);
             String email = jwtService.extractEmail(token);
 
-            AuthLog lastLogin = authLogRepository.findTopByEmailAndActionOrderByTimestampDesc(email, "LOGIN_SUCCESS");
+            AuthLog lastLogin = authLogRepository.findTopByEmailAndActionOrderByTimestampDesc(email, "LOGIN_SUCCESS").orElse(null);
             long duration = 0;
             if (lastLogin != null) {
                 duration = ChronoUnit.SECONDS.between(lastLogin.getTimestamp(), LocalDateTime.now());
