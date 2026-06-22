@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Bell, Search, Menu, LogOut, Terminal, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { BASE_URL } from "../services/api";
 
 const avatarsList = [
   { id: "avatar1", name: "Indigo Commander", color: "from-indigo-500 to-cyan-500", icon: "🌌" },
@@ -50,6 +51,7 @@ const notificationRef = useRef(null);
     logout();
   };
 
+  const resolveAvatar = (val) => val && (val.startsWith("http") || val.startsWith("data:")) ? val : `${BASE_URL}${val}`;
   const isImageAvatar = avatar && (avatar.startsWith("http") || avatar.startsWith("/") || avatar.startsWith("data:"));
   const currentAvatarInfo = avatarsList.find(a => a.id === avatar) || avatarsList[0];
 
@@ -159,7 +161,7 @@ const notificationRef = useRef(null);
             title="View Profile Settings"
           >
             {isImageAvatar ? (
-              <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={resolveAvatar(avatar)} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               currentAvatarInfo.icon
             )}

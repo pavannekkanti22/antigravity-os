@@ -13,6 +13,7 @@ import {
   EyeOff
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { BASE_URL } from "../services/api";
 
 const avatarsList = [
   { id: "avatar1", name: "Cyber Commander", color: "from-cyan-500 to-blue-500", icon: "🌌" },
@@ -232,7 +233,7 @@ function Profile() {
           <div className="relative group">
             {isImageAvatar(avatar) ? (
               <div className="w-28 h-28 rounded-3xl overflow-hidden shadow-lg relative z-10 border-2 border-white/5">
-                <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                <img src={avatar?.startsWith("/") ? `${BASE_URL}${avatar}` : avatar} alt="Avatar" className="w-full h-full object-cover" />
               </div>
             ) : (
               <div className={`w-28 h-28 rounded-3xl bg-gradient-to-br ${currentAvatarInfo.color} flex items-center justify-center text-5xl shadow-lg relative z-10`}>
@@ -314,7 +315,7 @@ function Profile() {
                 <div className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4">
                   {isImageAvatar(avatar) ? (
                     <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/5 flex-shrink-0">
-                      <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={avatar?.startsWith("/") ? `${BASE_URL}${avatar}` : avatar} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
                   ) : (
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${currentAvatarInfo.color} flex items-center justify-center text-2xl flex-shrink-0`}>
