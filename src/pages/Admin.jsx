@@ -31,7 +31,9 @@ import {
   Clock,
   Settings,
   Sparkles,
+  Fingerprint,
 } from "lucide-react";
+import AuthMonitoringCenter from "../components/Admin/AuthMonitoringCenter";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -673,8 +675,8 @@ return () => clearInterval(interval);
                 : "text-zinc-400 hover:text-white hover:bg-zinc-900/40"
             }`}
           >
-            <Shield className="w-5 h-5" />
-            Security Center
+            <Fingerprint className="w-5 h-5" />
+            Auth Monitoring
           </button>
           <button
             onClick={() => setActiveSection("health")}
@@ -1176,64 +1178,9 @@ return () => clearInterval(interval);
           </div>
         )}
 
-        {/* SECTION: SECURITY AUDIT LOGS */}
+        {/* SECTION: AUTH MONITORING CENTER */}
         {activeSection === "logs" && (
-          <div className="max-w-[1300px] mx-auto bg-zinc-950/40 border border-white/5 rounded-3xl backdrop-blur-xl p-6 lg:p-8">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-xl font-black text-white mb-1 uppercase font-mono tracking-wider">Audit Trail Timeline</h2>
-                <p className="text-zinc-500 text-xs">Review security parameters and administrative override activities.</p>
-              </div>
-              <button
-                onClick={loadLogs}
-                className="px-5 py-2.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/15 text-cyan-400 hover:bg-cyan-500/20 transition-all duration-300 flex items-center gap-2 text-xs font-medium cursor-pointer font-mono"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Sync Audit
-              </button>
-            </div>
-
-            <div className="overflow-x-auto overflow-y-auto max-h-[560px] rounded-2xl border border-white/5 bg-zinc-950/20">
-              <table className="w-full border-collapse text-xs">
-                <thead>
-                  <tr className="bg-zinc-900/40 text-zinc-500 text-[10px] font-mono uppercase tracking-wider border-b border-white/5">
-                    <th className="p-4 text-left font-medium">TIMESTAMP</th>
-                    <th className="p-4 text-left font-medium">EVENT TYPE</th>
-                    <th className="p-4 text-left font-medium">ADMIN UPLINK</th>
-                    <th className="p-4 text-left font-medium">TARGET CREDENTIALS</th>
-                    <th className="p-4 text-left font-medium">TRANSACTION DATA LOG</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="p-12 text-center text-zinc-500 font-mono text-xs">
-                        Audit logger registers are empty.
-                      </td>
-                    </tr>
-                  ) : (
-                    logs.map((log) => (
-                      <tr key={log.id} className="border-b border-white/5 hover:bg-zinc-900/10 transition-colors duration-200">
-                        <td className="p-4 text-zinc-500 font-mono">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </td>
-                        <td className="p-4">
-                          <span className="px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[9px] font-mono font-bold tracking-wider">
-                            {log.action}
-                          </span>
-                        </td>
-                        <td className="p-4 text-cyan-400 font-mono">{log.adminEmail || "SYSTEM"}</td>
-                        <td className="p-4 text-zinc-400 font-mono">{log.targetUser || "—"}</td>
-                        <td className="p-4 text-zinc-300 max-w-[380px] truncate" title={log.details}>
-                          {log.details || "—"}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <AuthMonitoringCenter />
         )}
 
         {/* SECTION: SYSTEM HEALTH & SHELL */}

@@ -20,6 +20,10 @@ export function AuthProvider({ children }) {
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
   const logout = () => {
+    fetch("http://localhost:8081/api/auth/logout", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {});
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("fullName");
