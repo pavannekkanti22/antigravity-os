@@ -30,3 +30,15 @@ dist
 target/
 *.class
 *.log
+
+# Backend files (managed in separate repo)
+src/main/
+src/test/
+pom.xml
+mvnw
+mvnw.cmd
+.mvn/
+HELP.md
+
+# Uploads (user-generated content from backend)
+uploads/
