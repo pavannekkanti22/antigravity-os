@@ -13,13 +13,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class ProfileController {
 
     private final JwtService jwtService;
@@ -76,6 +80,48 @@ public class ProfileController {
         auditLogService.log("PROFILE_UPDATE", null, user.getEmail(), "Updated profile details: " + user.getFullName());
 
         return ResponseEntity.ok("Profile updated successfully");
+    }
+
+    @PostMapping("/api/profile/upload-avatar")
+    public ResponseEntity<?> uploadAvatar(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam("file") MultipartFile file
+    ) {
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtService.extractEmail(token);
+
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+
+            String originalName = file.getOriginalFilename();
+            String ext = "";
+            if (originalName != null && originalName.contains(".")) {
+                ext = originalName.substring(originalName.lastIndexOf("."));
+            }
+            String filename = "avatar_" + user.getId() + "_" + UUID.randomUUID().toString().substring(0, 8) + ext;
+
+            Path uploadDir = Paths.get("uploads/avatars");
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+
+            Path filePath = uploadDir.resolve(filename);
+            file.transferTo(filePath.toFile());
+
+            String avatarUrl = "/uploads/avatars/" + filename;
+
+            Map<String, String> response = new HashMap<>();
+            response.put("url", avatarUrl);
+
+            auditLogService.log("AVATAR_UPLOAD", null, user.getEmail(), "Uploaded avatar: " + filename);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Upload failed: " + e.getMessage());
+        }
     }
 
     @PutMapping("/api/profile/change-password")
