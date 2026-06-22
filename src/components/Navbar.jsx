@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Bell, Search, Menu, LogOut, Terminal, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const avatarsList = [
   { id: "avatar1", name: "Indigo Commander", color: "from-indigo-500 to-cyan-500", icon: "🌌" },
@@ -13,30 +14,17 @@ const avatarsList = [
 
 function Navbar() {
   const navigate = useNavigate();
+  const { user: profile, token, logout } = useAuth();
   const [avatar, setAvatar] = useState("avatar1");
-  const [profile, setProfile] = useState(null);
   const [notifications, setNotifications] = useState([]);
 const [showNotifications, setShowNotifications] = useState(false);
 const notificationRef = useRef(null);
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    if (!token) return;
-    fetch("http://localhost:8081/api/profile/me", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setProfile(data);
-        if (data.avatar) {
-          setAvatar(data.avatar);
-        }
-        loadNotifications();
-      })
-      .catch(err => console.error("Navbar profile load failed", err));
-  }, [token]);
+    if (profile?.avatar) {
+      setAvatar(profile.avatar);
+    }
+  }, [profile]);
 
   const loadNotifications = async () => {
     try {
@@ -50,16 +38,16 @@ const notificationRef = useRef(null);
   };
 
   useEffect(() => {
+    if (!token) return;
+    loadNotifications();
     const interval = setInterval(() => {
       loadNotifications();
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [token]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    navigate("/");
+    logout();
   };
 
   const isImageAvatar = avatar && (avatar.startsWith("http") || avatar.startsWith("/") || avatar.startsWith("data:"));
