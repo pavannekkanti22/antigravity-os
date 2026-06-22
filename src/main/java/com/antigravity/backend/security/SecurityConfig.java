@@ -51,6 +51,11 @@ public class SecurityConfig {
                                 "/api/telemetry/**"
                         )
                         .permitAll()
+
+                        .requestMatchers(
+                                "/uploads/**"
+                        )
+                        .permitAll()
                         .requestMatchers(
                                 "/api/settings/**"
                         )
