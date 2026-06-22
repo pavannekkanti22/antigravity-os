@@ -1,13 +1,10 @@
 import {
   LayoutDashboard,
   User,
-  BarChart3,
   Settings,
   Rocket,
   Shield,
-  LogOut,
-  Activity,
-  Cpu
+  LogOut
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -17,18 +14,28 @@ function Sidebar() {
 
   const role = localStorage.getItem("role");
 
-  const menuItems = [
-    {
-      title: "Dashboard",
-      icon: <LayoutDashboard size={18} />,
-      path: "/dashboard",
-    },
-    {
-      title: "Profile Settings",
-      icon: <User size={18} />,
-      path: "/profile",
-    }
-  ];
+ const menuItems = [
+  {
+    title: "Dashboard",
+    icon: <LayoutDashboard size={18} />,
+    path: "/dashboard",
+  },
+  {
+    title: "Profile Settings",
+    icon: <User size={18} />,
+    path: "/profile",
+  },
+
+  ...(role === "ADMIN"
+    ? [
+        {
+          title: "System Settings",
+          icon: <Settings size={18} />,
+          path: "/settings",
+        },
+      ]
+    : []),
+];
 
   return (
     <aside className="hidden lg:flex w-64 h-[calc(100vh-8rem)] sticky top-28 bg-zinc-950/20 border border-white/5 rounded-[32px] p-5 flex-col justify-between backdrop-blur-3xl shadow-[0_16px_40px_rgba(0,0,0,0.5)]">

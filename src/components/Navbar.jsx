@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Bell, Search, Menu, LogOut, Terminal, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +15,9 @@ function Navbar() {
   const navigate = useNavigate();
   const [avatar, setAvatar] = useState("avatar1");
   const [profile, setProfile] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+const [showNotifications, setShowNotifications] = useState(false);
+const notificationRef = useRef(null);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -30,9 +33,34 @@ function Navbar() {
         if (data.avatar) {
           setAvatar(data.avatar);
         }
+        loadNotifications();
       })
       .catch(err => console.error("Navbar profile load failed", err));
   }, [token]);
+  const loadNotifications = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:8081/api/notifications",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    useEffect(() => {
+  const interval = setInterval(() => {
+    loadNotifications();
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, []);
+
+    const data = await response.json();
+    setNotifications(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -84,10 +112,62 @@ function Navbar() {
         </div>
 
         {/* Notifications Alert Center */}
-        <button className="w-11 h-11 rounded-2xl bg-zinc-900/40 border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:border-violet-500/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-all duration-300 cursor-pointer relative">
-          <Bell size={18} />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-violet-500 pulse-cyber"></span>
-        </button>
+       <div className="relative" ref={notificationRef}>
+  <button
+    onClick={() =>
+      setShowNotifications(!showNotifications)
+    }
+    className="w-11 h-11 rounded-2xl bg-zinc-900/40 border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-all duration-300 cursor-pointer relative"
+  >
+    <Bell size={18} />
+
+    {notifications.filter(n => !n.read).length > 0 && (
+      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center">
+        {notifications.filter(n => !n.read).length}
+      </span>
+    )}
+  </button>
+
+  {showNotifications && (
+    <div className="absolute right-0 mt-3 w-[380px] bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl z-50 overflow-hidden">
+
+      <div className="p-4 border-b border-zinc-800">
+        <h3 className="text-white font-bold">
+          Notifications
+        </h3>
+      </div>
+
+      <div className="max-h-[400px] overflow-y-auto">
+
+        {notifications.length === 0 ? (
+          <div className="p-6 text-center text-zinc-500">
+            No notifications
+          </div>
+        ) : (
+          notifications.map(notification => (
+            <div
+              key={notification.id}
+              className="p-4 border-b border-zinc-900 hover:bg-zinc-900/50"
+            >
+              <p className="text-white text-sm font-semibold">
+                {notification.title}
+              </p>
+
+              <p className="text-zinc-400 text-xs mt-1">
+                {notification.message}
+              </p>
+
+              <p className="text-zinc-600 text-[11px] mt-2">
+                {new Date(notification.createdAt).toLocaleString()}
+              </p>
+            </div>
+          ))
+        )}
+
+      </div>
+    </div>
+  )}
+</div>
 
         {/* Dynamic User Capsule */}
         <div className="flex items-center gap-3 pl-3 border-l border-white/5">
