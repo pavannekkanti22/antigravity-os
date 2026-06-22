@@ -43,11 +43,10 @@ const notificationRef = useRef(null);
       const response = await fetch("http://localhost:8081/api/notifications", {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!response.ok) return;
       const data = await response.json();
       setNotifications(data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (_) {}
   };
 
   useEffect(() => {

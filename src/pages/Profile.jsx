@@ -172,7 +172,10 @@ function Profile() {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      if (!response.ok) throw new Error("Upload failed");
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Upload failed");
+      }
       const data = await response.json();
       await updateProfileAvatar(data.url);
     } catch (err) {
