@@ -9,6 +9,7 @@ import com.antigravity.backend.security.AuditLogService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,6 +32,9 @@ public class ProfileController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+
+    @Value("${app.upload.dir}")
+    private String uploadDir;
 
     @GetMapping("/api/profile/me")
     public ResponseEntity<?> getProfile(
@@ -103,12 +108,12 @@ public class ProfileController {
             }
             String filename = "avatar_" + user.getId() + "_" + UUID.randomUUID().toString().substring(0, 8) + ext;
 
-            Path uploadDir = Paths.get("uploads/avatars");
-            if (!Files.exists(uploadDir)) {
-                Files.createDirectories(uploadDir);
+            Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
+            if (!Files.exists(dir)) {
+                Files.createDirectories(dir);
             }
 
-            Path filePath = uploadDir.resolve(filename);
+            Path filePath = dir.resolve(filename);
             file.transferTo(filePath.toFile());
 
             String avatarUrl = "/uploads/avatars/" + filename;
