@@ -30,3 +30,25 @@ dist
 target/
 *.class
 *.log
+
+# Frontend files (managed in separate repo)
+src/components/
+src/context/
+src/Layouts/
+src/pages/
+src/routes/
+src/services/
+src/App.jsx
+src/main.jsx
+src/index.css
+public/
+eslint.config.js
+index.html
+package.json
+package-lock.json
+postcss.config.js
+vite.config.js
+tailwind.config.js
+
+# Uploads (user-generated content)
+uploads/
