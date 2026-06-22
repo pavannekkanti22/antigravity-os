@@ -1,13 +1,16 @@
 package com.antigravity.backend.controller;
 
 import com.antigravity.backend.dto.*;
+import com.antigravity.backend.entity.AuthLog;
 import com.antigravity.backend.entity.User;
+import com.antigravity.backend.repository.AuthLogRepository;
 import com.antigravity.backend.repository.UserRepository;
 import com.antigravity.backend.security.JwtService;
 import com.antigravity.backend.security.AuditLogService;
 import com.antigravity.backend.security.OtpService;
 import com.antigravity.backend.utils.PasswordUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -15,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 @RestController
@@ -28,6 +33,68 @@ public class AuthController {
     private final JwtService jwtService;
     private final AuditLogService auditLogService;
     private final OtpService otpService;
+    private final AuthLogRepository authLogRepository;
+
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
+    }
+
+    private String parseDeviceType(String userAgent) {
+        if (userAgent == null) return "Unknown";
+        String ua = userAgent.toLowerCase();
+        if (ua.contains("mobile") || ua.contains("android") || ua.contains("iphone")) return "Mobile";
+        if (ua.contains("tablet") || ua.contains("ipad")) return "Tablet";
+        if (ua.contains("postman") || ua.contains("curl") || ua.contains("wget")) return "API";
+        return "Desktop";
+    }
+
+    private String parseLocation(String ip) {
+        if (ip == null || ip.startsWith("127.") || ip.startsWith("192.168.") || ip.startsWith("10.") || ip.equals("0:0:0:0:0:0:0:1")) {
+            return "Local Network";
+        }
+        return "External (" + ip + ")";
+    }
+
+    private boolean isSuspiciousLogin(String email, String ip, String userAgent) {
+        LocalWindow window = LocalDateTime.now().minusMinutes(15);
+        long recentFailures = authLogRepository.countByActionAndTimestampAfter("LOGIN_FAILED", window);
+        if (recentFailures >= 5) return true;
+
+        long recentSuccess = authLogRepository.countByActionAndTimestampAfter("LOGIN_SUCCESS", window);
+        if (recentSuccess > 20) return true;
+
+        return false;
+    }
+
+    private void logAuthEvent(String email, String action, HttpServletRequest request, boolean suspicious, String riskReason) {
+        String ip = getClientIp(request);
+        String ua = request != null ? request.getHeader("User-Agent") : null;
+        String deviceType = parseDeviceType(ua);
+
+        AuthLog log = AuthLog.builder()
+                .email(email)
+                .action(action)
+                .timestamp(LocalDateTime.now())
+                .ipAddress(ip)
+                .userAgent(ua)
+                .deviceType(deviceType)
+                .location(parseLocation(ip))
+                .suspicious(suspicious)
+                .riskReason(riskReason)
+                .build();
+
+        authLogRepository.save(log);
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -61,13 +128,16 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String ip = getClientIp(httpRequest);
+        String ua = httpRequest.getHeader("User-Agent");
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElse(null);
 
         if (user == null) {
             auditLogService.log("LOGIN_FAILED", null, request.getEmail(), "Invalid email credential signal");
+            logAuthEvent(request.getEmail(), "LOGIN_FAILED", httpRequest, false, "Invalid email");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthResponse(
                             "Invalid email",
@@ -77,6 +147,7 @@ public class AuthController {
 
         if (Boolean.FALSE.equals(user.getActive())) {
             auditLogService.log("LOGIN_FAILED", null, user.getEmail(), "Blocked login for deactivated account");
+            logAuthEvent(user.getEmail(), "LOGIN_FAILED", httpRequest, true, "Deactivated account");
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new AuthResponse(
                             "Account is deactivated. Contact Administrator.",
@@ -86,10 +157,8 @@ public class AuthController {
 
         boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!passwordMatches) {
-            // Check if password matches legacy SHA-256 hashing
             if (PasswordUtil.verifyPassword(request.getPassword(), user.getPassword())) {
                 passwordMatches = true;
-                // Migrate the user password to BCrypt
                 user.setPassword(passwordEncoder.encode(request.getPassword()));
                 userRepository.save(user);
             }
@@ -97,6 +166,8 @@ public class AuthController {
 
         if (!passwordMatches) {
             auditLogService.log("LOGIN_FAILED", null, user.getEmail(), "Invalid password credential signal");
+            boolean susp = isSuspiciousLogin(user.getEmail(), ip, ua);
+            logAuthEvent(user.getEmail(), "LOGIN_FAILED", httpRequest, susp, susp ? "Multiple failed attempts" : "Invalid password");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthResponse(
                             "Invalid password",
@@ -108,6 +179,9 @@ public class AuthController {
 
         auditLogService.log("LOGIN_SUCCESS", null, user.getEmail(), "User logged in and established secure session");
 
+        boolean susp = isSuspiciousLogin(user.getEmail(), ip, ua);
+        logAuthEvent(user.getEmail(), "LOGIN_SUCCESS", httpRequest, susp, susp ? "Unusual login pattern detected" : null);
+
         return ResponseEntity.ok(
                 new AuthResponse(
                         "Login successful",
@@ -116,11 +190,46 @@ public class AuthController {
         );
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader, HttpServletRequest httpRequest) {
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtService.extractEmail(token);
+
+            AuthLog lastLogin = authLogRepository.findTopByEmailAndActionOrderByTimestampDesc(email, "LOGIN_SUCCESS");
+            long duration = 0;
+            if (lastLogin != null) {
+                duration = ChronoUnit.SECONDS.between(lastLogin.getTimestamp(), LocalDateTime.now());
+            }
+
+            String ip = getClientIp(httpRequest);
+            String ua = httpRequest.getHeader("User-Agent");
+
+            AuthLog log = AuthLog.builder()
+                    .email(email)
+                    .action("LOGOUT")
+                    .timestamp(LocalDateTime.now())
+                    .ipAddress(ip)
+                    .userAgent(ua)
+                    .deviceType(parseDeviceType(ua))
+                    .location(parseLocation(ip))
+                    .sessionDuration(duration)
+                    .suspicious(false)
+                    .build();
+
+            authLogRepository.save(log);
+            auditLogService.log("LOGOUT", null, email, "User logged out. Session duration: " + duration + "s");
+
+            return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("message", "Logged out"));
+        }
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
         if (user == null) {
-            // Standard safety response to prevent user enumeration
             return ResponseEntity.ok(Map.of(
                     "message", "If the credentials match a system identity, a recovery key will be generated.",
                     "code", "OTP_SENT"

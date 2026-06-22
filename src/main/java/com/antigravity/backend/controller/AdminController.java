@@ -3,8 +3,10 @@ package com.antigravity.backend.controller;
 import com.antigravity.backend.dto.AdminUpdateUserRequest;
 import com.antigravity.backend.dto.AnalyticsResponse;
 import com.antigravity.backend.entity.ActivityLog;
+import com.antigravity.backend.entity.AuthLog;
 import com.antigravity.backend.entity.User;
 import com.antigravity.backend.repository.ActivityLogRepository;
+import com.antigravity.backend.repository.AuthLogRepository;
 import com.antigravity.backend.repository.UserRepository;
 import com.antigravity.backend.security.JwtService;
 import com.antigravity.backend.security.AuditLogService;
@@ -28,6 +30,7 @@ public class AdminController {
 
     private final UserRepository userRepository;
     private final ActivityLogRepository activityLogRepository;
+    private final AuthLogRepository authLogRepository;
     private final JwtService jwtService;
     private final AuditLogService auditLogService;
     private final PasswordEncoder passwordEncoder;
@@ -216,5 +219,46 @@ public class AdminController {
                 .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/auth-monitoring")
+    public ResponseEntity<?> getAuthLogs(
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) Boolean suspicious,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        List<AuthLog> logs;
+        if (email != null && !email.isEmpty()) {
+            logs = authLogRepository.findByEmailOrderByTimestampDesc(email);
+        } else if (action != null && !action.isEmpty()) {
+            logs = authLogRepository.findByActionOrderByTimestampDesc(action);
+        } else if (suspicious != null && suspicious) {
+            logs = authLogRepository.findBySuspiciousTrueOrderByTimestampDesc();
+        } else if (from != null && to != null) {
+            LocalDateTime start = LocalDateTime.parse(from);
+            LocalDateTime end = LocalDateTime.parse(to);
+            logs = authLogRepository.findByTimestampBetweenOrderByTimestampDesc(start, end);
+        } else {
+            logs = authLogRepository.findAllByOrderByTimestampDesc();
+        }
+        return ResponseEntity.ok(logs);
+    }
+
+    @GetMapping("/auth-monitoring/stats")
+    public ResponseEntity<?> getAuthStats() {
+        LocalDateTime last24h = LocalDateTime.now().minusHours(24);
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalLogins", authLogRepository.countByAction("LOGIN_SUCCESS"));
+        stats.put("failedLogins", authLogRepository.countByAction("LOGIN_FAILED"));
+        stats.put("logouts", authLogRepository.countByAction("LOGOUT"));
+        stats.put("suspiciousEvents", authLogRepository.countBySuspiciousTrue());
+        stats.put("logins24h", authLogRepository.countByActionAndTimestampAfter("LOGIN_SUCCESS", last24h));
+        stats.put("failed24h", authLogRepository.countByActionAndTimestampAfter("LOGIN_FAILED", last24h));
+        stats.put("activeUsers", authLogRepository.countDistinctActiveUsersSince(last24h));
+
+        return ResponseEntity.ok(stats);
     }
 }
