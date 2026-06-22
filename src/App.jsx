@@ -9,6 +9,10 @@ import AuthScreen from "./pages/AuthScreen";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import SettingsPage from "./pages/Settings";
+import ActivityTimeline from "./pages/ActivityTimeline";
+import AIAssistant from "./pages/AIAssistant";
+import Preferences from "./pages/Preferences";
+import SupportCenter from "./pages/SupportCenter";
 
 import DashboardLayout from "./Layouts/DashboardLayout";
 import AuthLayout from "./Layouts/AuthLayout";
@@ -50,6 +54,54 @@ function App() {
             <ProtectedRoute>
               <DashboardLayout>
                 <Profile />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ACTIVITY TIMELINE */}
+        <Route
+          path="/activity"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ActivityTimeline />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* AI ASSISTANT */}
+        <Route
+          path="/ai-assistant"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <AIAssistant />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* PREFERENCES */}
+        <Route
+          path="/preferences"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <Preferences />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* SUPPORT CENTER */}
+        <Route
+          path="/support"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <SupportCenter />
               </DashboardLayout>
             </ProtectedRoute>
           }

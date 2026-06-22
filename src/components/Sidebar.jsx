@@ -4,7 +4,11 @@ import {
   Settings,
   Rocket,
   Shield,
-  LogOut
+  LogOut,
+  Clock,
+  Bot,
+  Palette,
+  LifeBuoy
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -24,6 +28,26 @@ function Sidebar() {
     title: "Profile Settings",
     icon: <User size={18} />,
     path: "/profile",
+  },
+  {
+    title: "Activity Timeline",
+    icon: <Clock size={18} />,
+    path: "/activity",
+  },
+  {
+    title: "AI Assistant",
+    icon: <Bot size={18} />,
+    path: "/ai-assistant",
+  },
+  {
+    title: "Preferences",
+    icon: <Palette size={18} />,
+    path: "/preferences",
+  },
+  {
+    title: "Support Center",
+    icon: <LifeBuoy size={18} />,
+    path: "/support",
   },
 
   ...(role === "ADMIN"
